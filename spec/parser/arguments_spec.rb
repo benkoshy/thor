@@ -16,9 +16,19 @@ describe Thor::Arguments do
     @opt.parse(args)
   end
 
+  def create_arguments(arguments = [])
+    arguments.sort! { |a, b| b.name <=> a.name }
+    @opt = Thor::Arguments.new(arguments)
+  end
+
+  def create_argument(type, default, options = {})
+    default_options = {:required => default.nil?, :type => type, :default => default}
+    Thor::Argument.new(type.to_s, default_options.merge(options))
+  end
+
   describe "#parse" do
     it "parses arguments in the given order" do
-      create :string => nil, :numeric => nil
+      create :string => nil, :numeric => nil      
       expect(parse("name", "13")["string"]).to eq("name")
       expect(parse("name", "13")["numeric"]).to eq(13)
       expect(parse("name", "+13")["numeric"]).to eq(13)
@@ -65,6 +75,14 @@ describe Thor::Arguments do
     it "returns the default value if none is provided" do
       create :string => "foo", :numeric => 3.0
       expect(parse("bar")).to eq("string" => "bar", "numeric" => 3.0)
+    end
+
+    describe "parse validator" do
+      it "returns the input when validator successfully parses" do
+        options = {validator: proc { |v| v == "Mine eyes have seen the glory" }, validator_desc: "Battle Hymn of the Republic"}      
+        create_arguments [create_argument(:string, nil, options)]      
+        expect(parse("Mine eyes have seen the glory")["string"]).to eq("Mine eyes have seen the glory")
+      end          
     end
   end
 end
